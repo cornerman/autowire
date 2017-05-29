@@ -1,7 +1,7 @@
 crossScalaVersions := Seq("2.10.4", "2.11.8", "2.12.0")
 
 val autowire = crossProject.settings(
-  organization := "com.lihaoyi",
+  organization := "com.github.cornerman",
 
   version := "0.2.6",
   name := "autowire",
