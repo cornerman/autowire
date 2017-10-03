@@ -19,7 +19,6 @@ object Macros {
     def flatMap[V](f: T => Check[V]) = Luz[V](s)
     def withFilter(f: T => Boolean) = Luz[T](s)
   }
-
   case class Win[T](t: T, s: String) extends Check[T] {
     def map[V](f: T => V) = Win(f(t), s)
     def flatMap[V](f: T => Check[V]) = f(t)
@@ -270,18 +269,18 @@ object Macros {
     }
   }
 
-  def routeMacro[Trait, PickleType]
+  def routeMacro[Trait, PickleType, ResponseType[_]]
                 (c: Context)
                 (target: c.Expr[Trait])
-                (implicit t: c.WeakTypeTag[Trait], pt: c.WeakTypeTag[PickleType])
-                : c.Expr[Router[PickleType]] = {
+                (implicit t: c.WeakTypeTag[Trait], pt: c.WeakTypeTag[PickleType], rt: c.WeakTypeTag[ResponseType[PickleType]])
+                : c.Expr[Router[PickleType, ResponseType[PickleType]]] = {
     import c.universe._
     val help = new MacroHelp[c.type](c)
     val topClass = weakTypeOf[Trait]
     val routes = help.getAllRoutesForClass(pt, target, topClass, topClass.typeSymbol.fullName.toString.split('.').toSeq, Nil).toList
 
-    val res = q"{case ..$routes}: autowire.Core.Router[$pt]"
-    //    println("RES", res)
+    val res = q"{case ..$routes}: autowire.Core.Router[$pt, $rt[$pt]]"
+    // println("RES", res)
     c.Expr(res)
   }
 

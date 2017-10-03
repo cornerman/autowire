@@ -2,13 +2,18 @@ package autowire
 
 import scala.concurrent.Future
 import scala.language.experimental.macros
+
+object ResponseMapping {
+  type Id[T] = T
+}
+
 /**
  * A client to make autowire'd function calls to a particular interface.
  * A single client can only make calls to one interface, but it's not a
  * huge deal. Just make a few clients (they can all inherit/delegate the
  * `callRequest` method) if you want multiple targets.
  */
-trait Client[PickleType, Reader[_], Writer[_]] extends Serializers[PickleType, Reader, Writer] {
+trait Client[PickleType, Reader[_], Writer[_]] extends Serializers[PickleType, ResponseMapping.Id, Reader, Writer] {
   type Request = Core.Request[PickleType]
   /**
    * Actually makes a request
@@ -38,19 +43,19 @@ case class ClientProxy[Trait,
                        Writer[_]]
                       (self: Client[PickleType, Reader, Writer])
 
-trait Server[PickleType, Reader[_], Writer[_]] extends Serializers[PickleType, Reader, Writer] {
+trait ServerBase[PickleType, ResponseType[_], Reader[_], Writer[_]] extends Serializers[PickleType, ResponseType, Reader, Writer] {
   type Request = Core.Request[PickleType]
-  type Router = Core.Router[PickleType]
+  type Router = Core.Router[PickleType, ResponseType[PickleType]]
   /**
    * A macro that generates a `Router` PartialFunction which will dispatch incoming
    * [[Requests]] to the relevant method on [[Trait]]
    */
-  def route[Trait](target: Trait): Router = macro Macros.routeMacro[Trait, PickleType]
-
+  def route[Trait](target: Trait): Router = macro Macros.routeMacro[Trait, PickleType, ResponseType]
 }
 
+trait Server[PickleType, Reader[_], Writer[_]] extends ServerBase[PickleType, ResponseMapping.Id, Reader, Writer]
 
-trait Serializers[PickleType, Reader[_], Writer[_]] {
+trait Serializers[PickleType, ResponseType[_], Reader[_], Writer[_]] {
   def read[Result: Reader](p: PickleType): Result
-  def write[Result: Writer](r: Result): PickleType
+  def write[Result: Writer](r: ResponseType[Result]): ResponseType[PickleType]
 }

@@ -9,7 +9,7 @@ object Core {
    * convenience, but it's really just a normal `PartialFunction`
    * and can be combined/queried/treated like any other.
    */
-  type Router[PickleType] = PartialFunction[Request[PickleType], Future[PickleType]]
+  type Router[PickleType, ResponseType] = PartialFunction[Request[PickleType], Future[ResponseType]]
 
   /**
    * A marshalled autowire'd function call.
